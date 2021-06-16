@@ -41,19 +41,25 @@ AddEventHandler("onClientResourceStart", function(resName)
 	if GetCurrentResourceName() ~= resName and "pma-voice" ~= resName then
 		return
 	end
-	leaveradio()
+  if isLoggedIn then
+    while QBCore == nil do
+      Citizen.Wait(20)
+    end
+    leaveradio()
+  end
 end)
 
 Citizen.CreateThread(function()
   while true do
     if isLoggedIn then
       if r then
-        local xPlayer = QBCore.Functions.GetPlayerData()
-        if xPlayer.metadata["isdead"] or xPlayer.metadata["inlaststand"] then
-          if RadioChannel ~= 0 then
-            leaveradio()
+        QBCore.Functions.TriggerCallback('qb-radio:server:GetItem', function(hasItem)
+          if not hasItem then
+            if RadioChannel ~= 0 then
+              leaveradio()
+            end
           end
-        end
+        end,"radio")
       end
     end
     Citizen.Wait(1000)
@@ -150,3 +156,29 @@ function IsRadioOn()
 end
 
 exports("IsRadioOn", IsRadioOn)
+
+RegisterCommand('r', function(source, args, rawCommand)
+rchannel = tonumber(args[1])
+if rchannel ~= nil then
+  if rchannel <= Config.MaxFrequency and rchannel ~= 0 then
+    if rchannel ~= RadioChannel then
+      if rchannel <= Config.RestrictedChannels then
+        local xPlayer = QBCore.Functions.GetPlayerData()
+        if (xPlayer.job.name == 'police' or xPlayer.job.name == 'ems' or xPlayer.job.name == 'doctor') and xPlayer.job.onduty then
+          connecttoradio(rchannel)
+        else
+          QBCore.Functions.Notify(Config.messages['restricted_channel_error'], 'error')
+        end
+      else
+        connecttoradio(rchannel)
+      end
+    else
+      QBCore.Functions.Notify(Config.messages['you_on_radio'] , 'error')
+    end
+  else
+    QBCore.Functions.Notify(Config.messages['invalid_radio'] , 'error')
+  end
+else
+  QBCore.Functions.Notify(Config.messages['invalid_radio'] , 'error')
+end
+end,false)
