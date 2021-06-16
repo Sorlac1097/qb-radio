@@ -69,6 +69,11 @@ function connecttoradio(channel)
     exports["pma-voice"]:setVoiceProperty("radioEnabled", true)
   end
   exports["pma-voice"]:setRadioChannel(channel)
+  if SplitStr(tostring(channel), ".")[2] ~= nil and SplitStr(tostring(channel), ".")[2] ~= "" then
+    QBCore.Functions.Notify(Config.messages['joined_to_radio'] ..channel.. ' MHz </b>', 'success')
+  else
+    QBCore.Functions.Notify(Config.messages['joined_to_radio'] ..channel.. '.00 MHz </b>', 'success')
+  end
 end
 
 function leaveradio()
@@ -76,6 +81,7 @@ function leaveradio()
   r = false
   exports["pma-voice"]:setRadioChannel(0)
   exports["pma-voice"]:setVoiceProperty("radioEnabled", false)
+  QBCore.Functions.Notify(Config.messages['you_leave'] , 'error')
 end
 
 RegisterNUICallback('joinRadio', function(data, cb)
@@ -87,21 +93,11 @@ RegisterNUICallback('joinRadio', function(data, cb)
           local xPlayer = QBCore.Functions.GetPlayerData()
           if (xPlayer.job.name == 'police' or xPlayer.job.name == 'ems' or xPlayer.job.name == 'doctor') and xPlayer.job.onduty then
             connecttoradio(rchannel)
-            if SplitStr(data.channel, ".")[2] ~= nil and SplitStr(data.channel, ".")[2] ~= "" then
-              QBCore.Functions.Notify(Config.messages['joined_to_radio'] .. data.channel .. ' MHz </b>', 'success')
-            else
-              QBCore.Functions.Notify(Config.messages['joined_to_radio'] .. data.channel .. '.00 MHz </b>', 'success')
-            end
           else
             QBCore.Functions.Notify(Config.messages['restricted_channel_error'], 'error')
           end
         else
           connecttoradio(rchannel)
-          if SplitStr(data.channel, ".")[2] ~= nil and SplitStr(data.channel, ".")[2] ~= "" then 
-            QBCore.Functions.Notify(Config.messages['joined_to_radio'] .. data.channel .. ' MHz </b>', 'success')
-          else
-            QBCore.Functions.Notify(Config.messages['joined_to_radio'] .. data.channel .. '.00 MHz </b>', 'success')
-          end
         end
       else
         QBCore.Functions.Notify(Config.messages['you_on_radio'] , 'error')
@@ -119,7 +115,6 @@ RegisterNUICallback('leaveRadio', function(data, cb)
     QBCore.Functions.Notify(Config.messages['not_on_radio'], 'error')
   else
     leaveradio()
-    QBCore.Functions.Notify(Config.messages['you_leave'] , 'error')
   end
 end)
 
@@ -136,7 +131,6 @@ RegisterNetEvent('qb-radio:onRadioDrop')
 AddEventHandler('qb-radio:onRadioDrop', function()
   if RadioChannel ~= 0 then
     leaveradio()
-    QBCore.Functions.Notify(Config.messages['you_leave'] , 'error')
   end
 end)
 
@@ -150,3 +144,9 @@ function SplitStr(inputstr, sep)
   end
   return t
 end
+
+function IsRadioOn()
+  return r
+end
+
+exports("IsRadioOn", IsRadioOn)
